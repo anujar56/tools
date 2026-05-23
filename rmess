@@ -1,0 +1,151 @@
+#!/bin/bash
+
+help() {
+    echo "Usage: $0 -e log_file"
+    echo "       $0 -w log_file"
+    echo
+    echo "Options:"
+    echo "  -e    Generate error report for the specified log file."
+    echo "  -w    Generate warning report for the specified log file."
+    exit 1
+}
+
+#if no arguments are provided, print usage and exit
+if [ $# -eq 0 ]; then
+    help
+    exit 1  
+fi
+
+#Get the last argument as the log file
+log=${!#}
+
+# ANSI colors
+RST="\033[0m"
+BOLD="\033[1m"
+RED="\033[1;31m"
+YELLOW="\033[1;33m"
+GREEN="\033[1;32m"
+CYAN="\033[1;36m"
+MAGENTA="\033[1;35m"
+BLUE="\033[1;34m"
+WHITE="\033[1;37m"
+BG_RED="\033[41m"
+BG_YELLOW="\033[43m"
+BG_GREEN="\033[42m"
+
+if [ -z "$log" ]; then
+  echo "Usage: $0 message.log"
+  exit 1
+fi
+
+if [ ! -f "$log" ]; then
+  echo "Error: File '$log' not found!"
+  exit 1
+fi  
+
+report() {
+    echo
+    echo -e "${GREEN}Report for log file: /var/log/$log${RST}"
+    echo "-----------------------------------"
+    echo -e "${YELLOW}Total lines:${RST} $(wc -l < "$log")"
+    echo -e "${YELLOW}HostName :${RST} $(tail -n1 "$log" | awk '{print $4}')"
+    echo -e "${YELLOW}Start Date:${RST} $(sed -n '5p' "$log" | awk '{print $1, $2, $3}')"
+    echo -e "${YELLOW}End Date:${RST} $(tail -n1 "$log" | awk '{print $1, $2, $3}')"
+    echo -ne $YELLOW
+    echo "Top 10 Processes:"
+    echo -ne $CYAN
+    echo "-----------------------------------"
+    awk '{print $5}' "$log" | sort | uniq -c | sort -nr | head -10
+    echo -ne $RST
+    echo "-----------------------------------"
+    echo -e "${YELLOW}Error Counts:${RST} $(grep -i "error" "$log" | wc -l)"
+    echo -e "${YELLOW}Warning Counts:${RST} $(grep -i "warning" "$log" | wc -l)"
+    echo -e "${YELLOW}Info Counts:${RST} $(grep -i "info" "$log" | wc -l)"
+
+
+    
+}
+
+errors() {
+
+    echo "-----------------------------------"
+    echo -ne $YELLOW
+    echo "Top 10 Processes(Errors):"
+    echo -ne $RED
+    echo "-----------------------------------"
+    grep -i "error" "$log" | awk '{print $5}' | sort | uniq -c | sort -nr | head -10
+    echo -ne $RST
+    echo "-----------------------------------"
+    echo -ne $YELLOW
+    echo "Top 10 Processes(Warnings):"
+    echo -ne $YELLOW
+    echo "-----------------------------------"
+    grep -i "warning" "$log" | awk '{print $5}' | sort | uniq -c | sort -nr | head -10
+    echo -ne $RST
+    echo "-----------------------------------"
+    echo -ne $YELLOW
+    echo "Top 10 Processes(Info):"
+    echo -ne $GREEN
+    echo "-----------------------------------"
+    grep -i "info" "$log" | awk '{print $5}' | sort | uniq -c | sort -nr | head -10
+    echo -ne $RST
+    echo "-----------------------------------"
+
+}
+
+
+error_message() {
+
+  for i in $(grep -i "error" "$log" | awk '{print $5}' | sort | uniq -c | sort -nr | head -10 | awk '{print $2}' | xargs); do
+    echo "-----------------------------------"
+    echo -ne $RED
+    echo "Error messages for process: $i"
+    echo -ne $RST
+    i=$(echo $i | cut -d'[' -f1) #to remove the [number] from process name
+    echo "-----------------------------------"
+    grep -i "error" "$log" | grep -i "$i" | head -10
+    echo "-----------------------------------"
+  done
+
+}
+
+warning_message() {
+
+  for i in $(grep -i "warning" "$log" | awk '{print $5}' | sort | uniq -c | sort -nr | head -10 | awk '{print $2}' | xargs); do
+    echo "-----------------------------------"
+    echo -ne $YELLOW
+    echo "Warning messages for process: $i"
+    echo -ne $RST
+    i=$(echo $i | cut -d'[' -f1) #to remove the [number] from process name
+    echo "-----------------------------------"
+    grep -i "warning" "$log" | grep -i "$i" | head -10
+    echo "-----------------------------------"
+  done
+
+}
+
+
+
+while getopts "ew" opt; do
+  case $opt in
+    e)
+      report 
+      errors
+      error_message
+      exit 0
+      ;;
+    w)
+      report
+      errors
+      warning_message
+      exit 0
+      ;;
+    *)
+      help
+      ;;
+  esac
+done
+
+
+report 
+errors
