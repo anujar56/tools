@@ -1,5 +1,43 @@
 #!/bin/bash
 
+help() {
+    echo "Usage: $0 dir"
+    echo "       $0 -e path_to_exclude dir"
+    echo
+    echo "Options:"
+    echo "  -e    Exclude the specified path."
+    exit 1
+}
+
+
+#if no arguments are provided, print usage and exit
+if [ $# -eq 0 ]; then
+    help
+    exit 1              
+fi
+
+
+exclude=()
+
+while getopts "e:" opt; do
+        case $opt in
+                e) 
+                        ex=$(($# - 3))
+                        exclude+=("$OPTARG")
+                        # collect additional values
+                        for ((i=0; i<$ex; i++));
+                                do
+                                        exclude+=("${!OPTIND}")
+                                        ((OPTIND++))
+                                done
+                        ;;
+                *)
+                        help
+                        exit 1
+                        ;;      
+        esac
+done
+
 RED="\e[31m"
 GREEN="\e[32m"
 YELLOW="\e[33m"
@@ -10,6 +48,7 @@ echo
 du -sh ${!#}/* | sort -rh
 echo
 echo "====================="
+
 
 
 precheck() {
@@ -25,6 +64,7 @@ precheck() {
 
 
 d=$(du -sh ${!#}/* | sort -rh | head -5 | awk '{print $2}' | xargs)
+
 
 size() {
         
@@ -51,22 +91,7 @@ size() {
 
 }
 
-exclude=()
 
-while getopts "e:" opt; do
-        case $opt in
-                e) 
-                        ex=$(($# - 3))
-                        exclude+=("$OPTARG")
-                        # collect additional values
-                        for ((i=0; i<$ex; i++));
-                                do
-                                        exclude+=("${!OPTIND}")
-                                        ((OPTIND++))
-                                done
-                        ;;
-        esac
-done
 
 
 for k in $d; do
@@ -87,3 +112,5 @@ for k in $d; do
 
         size $k
 done
+
+
