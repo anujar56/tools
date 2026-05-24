@@ -104,9 +104,9 @@ error_message() {
     k=$(echo $i | cut -d'[' -f1) #to remove the [number] from process name
     pid=$(echo $i | cut -d'[' -f2 | cut -d']' -f1) #to extract the PID from process name
     echo "-----------------------------------"
-    grep -i "error" "$log" | grep -iE "$k\[$pid\]" | head -10
+    grep -in "error" "$log" | grep -iE "$k\[$pid\]" | head -10
     echo "-----------------------------------"
-    grep -i "error" "$log" | grep -i "$i" | head -10
+    grep -in "error" "$log" | grep -i "$i" | head -10
     echo "-----------------------------------"
   
   done
@@ -123,9 +123,9 @@ warning_message() {
     k=$(echo $i | cut -d'[' -f1) #to remove the [number] from process name
     pid=$(echo $i | cut -d'[' -f2 | cut -d']' -f1) #to extract the PID from process name
     echo "-----------------------------------"
-    grep -i "warning" "$log" | grep -iE "$k\[$pid\]" | head -10
+    grep -in "warning" "$log" | grep -iE "$k\[$pid\]" | head -10
     echo "-----------------------------------"
-    grep -i "warning" "$log" | grep -i "$i" | head -10
+    grep -in "warning" "$log" | grep -i "$i" | head -10
     echo "-----------------------------------"
   done
 
